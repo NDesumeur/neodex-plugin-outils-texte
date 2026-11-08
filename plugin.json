@@ -1,7 +1,7 @@
 {
   "id": "neodex.outilstexte",
   "name": "Outils texte",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "author": "NDesumeur",
   "description": "Trois outils de texte : comparer deux versions ligne par ligne (ajouts, retraits, modifications, majuscules et espaces ignorables), compter en direct mots, caractères, phrases, temps de lecture, mots les plus utilisés et limites Tweet, SMS, SEO ou bio Instagram, et corriger orthographe et typographie en français ou en anglais avec suggestions au clic droit et dictionnaire personnel.",
   "icon": "icon.png",
