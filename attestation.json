@@ -1,9 +1,9 @@
 {
   "pluginId": "neodex.outilstexte",
   "repo": "NDesumeur/neodex-plugin-outils-texte",
-  "version": "1.1.2",
-  "sha256": "3cf8bebbb5a9e5b75be5cedb9cc905c610da8d2a18fecd0a609a5468efb4d628",
-  "approvedAt": "2026-11-08T12:10:49.466Z",
+  "version": "1.1.3",
+  "sha256": "4243e546885dcb55d8fc398ac8c0233155d63b0358f21dfbc555dedfa64246d9",
+  "approvedAt": "2026-11-08T14:45:27.951Z",
   "neobase": ">=4.0.0",
-  "signature": "zIyRJb2oZF1yTrYcnPx1O8HVKSuifhZNTH4ltBv0LAGkHnD3NYmTymEqxrhQFA0Oro8LYKhq8F3TymTGe5WTAg=="
+  "signature": "P5KdSIUFb3W+CX4uqTGer06ViktVNWX/jojpW24VFa+XfKjvTdMwbb9zHrZlgXhxDv2G/XJI5l9ZdDTDSDOBAA=="
 }
