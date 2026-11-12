@@ -10,6 +10,7 @@
   "neobase": ">=4.0.0",
   "type": "app",
   "category": "Outils",
+  "compatibility": ["windows", "linux"],
   "syncMode": "fusion",
   "syncInfo": "Mots ajoutés au dictionnaire et mots ignorés.",
   "mobile": false,
