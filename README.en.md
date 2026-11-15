@@ -42,3 +42,7 @@ Words added to the dictionary and ignored words are stored by NeoDex, backed up 
 In NeoDex: **NeoStore → Discover → Outils texte → Install**.
 
 Building a plugin: see the [NeoDex SDK](https://github.com/NDesumeur/neodex-sdk).
+
+## Clean up
+
+Paste a text from a PDF, an email or a web page: the cleaned version appears next to it. Tick what to fix (double spaces, spaces at line ends, lines broken mid-sentence, extra blank lines, invisible characters) and pick the case. « Sentence case » lowers shouted words but keeps lone acronyms (PDF, NASA). Then copy the result or replace the text.

@@ -42,3 +42,7 @@ Les mots ajoutés au dictionnaire et ceux ignorés sont enregistrés par NeoDex,
 Dans NeoDex : **NeoStore → À découvrir → Outils texte → Installer**.
 
 Développer un plugin : voir le [SDK NeoDex](https://github.com/NDesumeur/neodex-sdk).
+
+## Nettoyer
+
+Colle un texte venu d'un PDF, d'un courriel ou d'une page web : la version nettoyée apparaît à côté. Coche ce qu'il faut corriger (espaces doubles, espaces en bout de ligne, lignes coupées au milieu des phrases, lignes vides en trop, caractères invisibles) et choisis les majuscules. « Majuscule en début de phrase » baisse les mots criés en majuscules mais garde les sigles seuls (PDF, SNCF). Puis copie le résultat ou remplace le texte.

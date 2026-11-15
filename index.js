@@ -5,9 +5,9 @@ const HTML = "";
 /*CSS-MOVED*/ const CSS = `.txBody{display:flex;flex-direction:column;gap:14px}
 .txCols{display:flex;gap:14px;align-items:stretch}
 .txCols>*{flex:1;min-width:0}
-.txArea{min-height:260px;resize:vertical;font-size:15px;line-height:1.5;padding:12px;user-select:text}
+.txArea{min-height:clamp(260px,calc(100vh - 420px),760px);resize:vertical;font-size:17px;line-height:1.5;padding:12px;user-select:text}
 .txOut{overflow:auto;max-height:60vh}
-.txDiff{width:100%;border-collapse:collapse;font:14px/1.45 Consolas,monospace;table-layout:fixed}
+.txDiff{width:100%;border-collapse:collapse;font:16px/1.45 Consolas,monospace;table-layout:fixed}
 .txDiff th{width:44px;color:var(--muted);font-weight:normal;text-align:right;padding:0 8px;vertical-align:top;user-select:none}
 .txDiff td{white-space:pre-wrap;word-break:break-word;padding:1px 8px;color:var(--shell);user-select:text}
 .txDiff tr.del td:nth-child(2),.txDiff td.del{background:rgba(255,79,109,.16)}
@@ -18,12 +18,16 @@ const HTML = "";
 .txDiff mark.in{background:rgba(63,191,106,.45);color:#fff}
 .txSide{display:flex;flex-direction:column;gap:14px}
 .txLimits{display:flex;flex-direction:column;gap:6px;padding:4px 2px}
-.txLim{display:flex;justify-content:space-between;color:var(--lilac)}
+.txLim{display:flex;justify-content:space-between;color:var(--lilac);font-size:16px}
+.txBody .hint,.txBody .check{font-size:15px}
+.txClean{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.txClean select.f{width:auto;font-size:15px}
 .txLim.over b{color:var(--red)}
 .txSpellOut{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto}
 .txWord{flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
-.txWord .btn{padding:6px 10px;font-size:9px}
-.txWord b.bad{color:var(--red);font-size:16px}
+.txWord .btn{padding:7px 11px;font-size:12px}
+.txWord b.bad{color:var(--red);font-size:18px}
+.txWord b.warn{font-size:16px}
 .txWord b.warn{color:#ffd07a;font-weight:normal}
 .spMenu .spFix{font-weight:bold;color:#fff}
 .spSug{display:flex;flex-direction:column}
@@ -86,6 +90,23 @@ function diffOps(a, b) {
 { const o = diffOps(['a', 'b', 'c'], ['a', 'x', 'c']).map(x => x[0]).join(''); console.assert(o === '=+-=' || o === '=-+=', 'diffOps ' + o); }
 const txWords = s => s.match(/\s+|[\p{L}\p{N}_'’-]+|[^\s\p{L}\p{N}_]/gu) || [];
 const TX_STOP = new Set('le la les de des du un une et en à au aux ce ces cette que qui quoi dans pour par sur avec sans ne pas plus est sont été être a ai as avons ont il elle ils elles on nous vous je tu me te se mon ma mes ton ta tes son sa ses leur leurs y d l j n s c qu the of and to in is it that for on as with was'.split(' '));
+// le nettoyage d'un texte collé (PDF, courriel, page web) : o = {spaces, trim, join, blank, invisible, caps: '' | 'phrase' | 'lower' | 'upper' | 'title'}
+function txClean(s, o) {
+  if (o.invisible) s = s.replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, '').replace(/[\u00A0\u202F]/g, ' ');  // les caractères invisibles et les espaces insécables collés d'un PDF
+  s = s.replace(/\r\n?/g, '\n');
+  if (o.spaces) s = s.replace(/\t/g, ' ').replace(/ {2,}/g, ' ');
+  if (o.trim) s = s.split('\n').map(l => l.trim()).join('\n').trim();
+  if (o.join) s = s.replace(/([^\n])\n(?!\n)(?=\S)/g, (m, a) => a === '-' ? '' : a + ' ');  // une ligne coupée au milieu d'une phrase : recollée (le tiret de coupure disparaît)
+  if (o.blank) s = s.replace(/\n{3,}/g, '\n\n');
+  if (o.spaces) s = s.replace(/ {2,}/g, ' ');
+  if (o.caps === 'lower') s = s.toLowerCase();
+  else if (o.caps === 'upper') s = s.toUpperCase();
+  else if (o.caps === 'title') s = s.toLowerCase().replace(/(^|[^\p{L}'’])(\p{L})/gu, (m, a, c) => a + c.toUpperCase());
+  else if (o.caps === 'phrase') s = s.replace(/\p{Lu}{2,}(?:[\s'’,-]+\p{Lu}{2,})+/gu, m => m.toLowerCase()).replace(/(^\s*|[.!?…]\s+|\n\s*)(\p{L})/gu, (m, a, c) => a + c.toUpperCase());
+  return s;  // en début de phrase : plusieurs mots criés de suite sont baissés, un sigle seul (PDF) reste
+}
+console.assert(txClean('  un  texte\u00A0 coupé\nen deux.\n\n\n\nfin  ', {spaces: 1, trim: 1, join: 1, blank: 1, invisible: 1, caps: ''}) === 'un texte coupé en deux.\n\nfin'
+  && txClean('BONJOUR TOUT LE MONDE. ça va ? oui, le PDF', {caps: 'phrase'}) === 'Bonjour tout le monde. Ça va ? Oui, le PDF' && txClean("l'été à paris", {caps: 'title'}) === "L'été À Paris" && txClean('coupu-\nre', {join: 1}) === 'coupure', 'outils texte : nettoyage');
 const tx = {mode: 'diff'};
 function txMount() {
   const v = $('textApp'), w = el('div', 'appWrap wide'), head = el('div', 'agHead'), tabs = el('div', 'agNav'), body = el('div', 'txBody');
@@ -94,8 +115,8 @@ function txMount() {
 }
 async function txOpen(mode = tx.mode) {
   await toolsReady(); tx.mode = mode;
-  toolTabs(tx.tabs, [['diff', 'COMPARER'], ['count', 'COMPTER'], ['spell', 'ORTHOGRAPHE']], mode, m => txOpen(m));
-  ({diff: txDiff, count: txCount, spell: txSpell})[mode]();
+  toolTabs(tx.tabs, [['diff', 'COMPARER'], ['count', 'COMPTER'], ['spell', 'ORTHOGRAPHE'], ['clean', 'NETTOYER']], mode, m => txOpen(m));
+  ({diff: txDiff, count: txCount, spell: txSpell, clean: txCleanTab})[mode]();
 }
 const txArea = (k, ph) => { const t = el('textarea', 'f txArea'); t.placeholder = ph; t.value = tools.text[k] || ''; t.spellcheck = k !== 'a' && k !== 'b'; t.oninput = () => { tools.text[k] = t.value; toolsSave(); }; return t; };
 function txDiff() {
@@ -153,6 +174,23 @@ function txCount() {
     lim.replaceChildren(el('span', 'label', 'Limites'), ...[['Tweet / X', 280], ['SMS', 160], ['Titre SEO', 60], ['Description SEO', 155], ['Bio Instagram', 150]].map(([l, max]) => {
       const r = el('div', 'txLim' + (s.length > max ? ' over' : '')); r.append(el('span', '', l), el('b', '', s.length + ' / ' + max)); return r; }));
   };
+  area.addEventListener('input', run); run(); area.focus();
+}
+function txCleanTab() {
+  const o = tools.text.cleanOpts ||= {spaces: true, trim: true, join: false, blank: true, invisible: true, caps: ''};
+  const area = txArea('clean', 'Colle un texte (d\'un PDF, d\'un courriel, d\'une page web) : la version nettoyée apparaît à droite.'), out = el('textarea', 'f txArea'), opts = el('div', 'txClean'), row = el('div', 'row'), info = el('span', 'hint');
+  out.readOnly = true; out.id = 'tx_cleanOut'; area.id = 'tx_cleanIn';
+  const chk = (k, l, t) => { const c = el('label', 'check'), i = el('input'); i.type = 'checkbox'; i.checked = !!o[k]; i.dataset.k = k; i.onchange = () => { o[k] = i.checked; toolsSave(); run(); }; c.append(i, ' ' + l); c.title = t; return c; };
+  const caps = el('select', 'f'); for (const [k, l] of [['', 'Majuscules : ne pas changer'], ['phrase', 'Majuscule en début de phrase'], ['lower', 'tout en minuscules'], ['upper', 'TOUT EN MAJUSCULES'], ['title', 'Une Majuscule À Chaque Mot']]) caps.append(new Option(l, k));
+  caps.value = o.caps || ''; caps.id = 'tx_caps'; caps.onchange = () => { o.caps = caps.value; toolsSave(); run(); };
+  opts.append(chk('spaces', 'Espaces doubles', 'Deux espaces ou plus, et les tabulations, deviennent une seule espace'), chk('trim', 'Espaces en début et fin de ligne', ''), chk('join', 'Recoller les lignes coupées', 'Les retours à la ligne au milieu d\'une phrase (copie d\'un PDF) disparaissent ; les paragraphes restent'),
+    chk('blank', 'Lignes vides en trop', 'Plus d\'une ligne vide de suite devient une seule'), chk('invisible', 'Caractères invisibles', 'Espaces insécables et caractères invisibles collés d\'un PDF ou d\'une page web'), caps);
+  const copy = el('button', 'btn main px', 'COPIER LE RÉSULTAT'), put = el('button', 'btn px', 'REMPLACER LE TEXTE'); put.id = 'tx_cleanPut';
+  copy.onclick = () => navigator.clipboard.writeText(out.value).then(() => toast('Copié'), () => toast('Copie impossible', true));
+  put.onclick = () => { area.value = out.value; tools.text.clean = area.value; toolsSave(); run(); };
+  row.append(copy, put, info);
+  const cols = el('div', 'txCols'); cols.append(area, out); tx.body.replaceChildren(opts, cols, row);
+  const run = () => { out.value = txClean(area.value, o); const d = area.value.length - out.value.length; info.textContent = !area.value ? '' : out.value === area.value ? 'Rien à nettoyer.' : d > 0 ? d + ' caractère' + (d > 1 ? 's' : '') + ' en moins' : 'casse changée'; };
   area.addEventListener('input', run); run(); area.focus();
 }
 function txSpell() {
