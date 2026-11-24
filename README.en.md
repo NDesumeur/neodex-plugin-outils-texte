@@ -4,6 +4,10 @@ Three tools for working on a text: compare two versions line by line, count ever
 
 *Version française : [README.md](README.md)*
 
+## Lines and find-replace (new in 1.3.0)
+
+Sort lines, remove duplicates, find and replace with or without a regular expression.
+
 ## Compare
 
 Paste the **original text** on the left and the **edited text** on the right: the result shows, line by line, what was removed, added or changed. Two options:
@@ -46,3 +50,11 @@ Building a plugin: see the [NeoDex SDK](https://github.com/NDesumeur/neodex-sdk)
 ## Clean up
 
 Paste a text from a PDF, an email or a web page: the cleaned version appears next to it. Tick what to fix (double spaces, spaces at line ends, lines broken mid-sentence, extra blank lines, invisible characters) and pick the case. « Sentence case » lowers shouted words but keeps lone acronyms (PDF, NASA). Then copy the result or replace the text.
+
+## Lines and find-replace (1.3.0)
+
+In **CLEAN UP**, a second row works on lines and text:
+
+- **Sort** A to Z (numbers in the right order: 9 before 10), Z to A, shortest first, or reverse the order.
+- **Remove duplicate lines**: a line already seen above disappears, ignoring capitals and surrounding spaces.
+- **Find and replace**, as plain text or as a **regular expression** (`\d+` a number, `^` and `$` the start and end of each line, `$1` brings back the first parenthesis). The number of replacements is shown; an invalid expression is flagged in red.

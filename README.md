@@ -4,6 +4,10 @@ Trois outils pour travailler un texte : comparer deux versions ligne par ligne, 
 
 *English version: [README.en.md](README.en.md)*
 
+## Lignes et rechercher-remplacer (nouveau en 1.3.0)
+
+Trier les lignes, enlever les doublons, rechercher et remplacer avec ou sans expression régulière.
+
 ## Comparer
 
 Colle le **texte d'origine** à gauche et le **texte modifié** à droite : le résultat montre, ligne par ligne, ce qui a été retiré, ajouté ou modifié. Deux options :
@@ -46,3 +50,11 @@ Développer un plugin : voir le [SDK NeoDex](https://github.com/NDesumeur/neodex
 ## Nettoyer
 
 Colle un texte venu d'un PDF, d'un courriel ou d'une page web : la version nettoyée apparaît à côté. Coche ce qu'il faut corriger (espaces doubles, espaces en bout de ligne, lignes coupées au milieu des phrases, lignes vides en trop, caractères invisibles) et choisis les majuscules. « Majuscule en début de phrase » baisse les mots criés en majuscules mais garde les sigles seuls (PDF, SNCF). Puis copie le résultat ou remplace le texte.
+
+## Lignes et rechercher-remplacer (1.3.0)
+
+Dans **NETTOYER**, une deuxième rangée travaille sur les lignes et le texte :
+
+- **Trier** de A à Z (les nombres dans le bon ordre : 9 avant 10), de Z à A, les plus courtes d’abord, ou inverser l’ordre.
+- **Supprimer les lignes en double** : une ligne déjà vue plus haut disparaît, sans compter les majuscules ni les espaces autour.
+- **Rechercher et remplacer**, en texte simple ou en **expression régulière** (`\d+` un nombre, `^` et `$` le début et la fin de chaque ligne, `$1` reprend la première parenthèse). Le nombre de remplacements s’affiche ; une expression invalide est signalée en rouge.

@@ -12,7 +12,19 @@ module.exports = async ({ pj, sleep }) => {
   if (await pj(`document.getElementById('tx_cleanIn').value`) !== out) throw new Error('remplacer');
   await set('tx_cleanIn', 'Un  texte   collé\nd’un PDF,\navec des  espaces en trop.'); await sleep(100);
   if (!/d’un PDF, avec/.test(await pj(`document.getElementById('tx_cleanOut').value`))) throw new Error('le sigle PDF a été baissé');
+  // les lignes : doublons retirés, triées ; puis une expression régulière (invalide d'abord : signalée)
+  await box('join', false); await pj(`(() => { const s = document.getElementById('tx_caps'); s.value = ''; s.dispatchEvent(new Event('change')); const t = document.getElementById('tx_sort'); t.value = 'az'; t.dispatchEvent(new Event('change')); })(), 0`);
+  await box('dedupe', true); await set('tx_cleanIn', 'poire 12\npomme 3\nPoire 12\nabricot 7'); await sleep(100);
+  const sorted = await pj(`document.getElementById('tx_cleanOut').value`);
+  if (sorted !== 'abricot 7\npoire 12\npomme 3') throw new Error('lignes : ' + JSON.stringify(sorted));
+  await box('rx', true); await set('tx_find', '(\\d+'); await sleep(100);
+  const bad = await pj(`document.getElementById('tx_find').classList.contains('bad') && /invalide/.test(document.querySelector('.txBody .row .hint').textContent)`);
+  await set('tx_find', ' (\\d+)$'); await set('tx_repl', ' : $1 €'); await sleep(100);
+  const rx = await pj(`[document.getElementById('tx_cleanOut').value, document.querySelector('.txBody .row .hint').textContent]`);
+  if (!bad || rx[0] !== 'abricot : 7 €\npoire : 12 €\npomme : 3 €' || !/3 remplacements/.test(rx[1])) throw new Error('expression régulière : ' + JSON.stringify({bad, rx}));
+  // remis comme avant : le profil de test reste propre
+  await set('tx_find', ''); await set('tx_repl', ''); await box('rx', false); await box('dedupe', false); await pj(`(() => { const t = document.getElementById('tx_sort'); t.value = ''; t.dispatchEvent(new Event('change')); })(), 0`);
   const over = await pj(`[...document.querySelectorAll('.appWrap *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).length`);
   if (over) throw new Error(over + ' élément(s) débordent à droite');
-  return 'nettoyage (espaces, lignes recollées, majuscules de phrase) et remplacer ok';
+  return 'lignes triées sans doublons, expression régulière (invalide signalée, 3 remplacements) · nettoyage (espaces, lignes recollées, majuscules de phrase) et remplacer ok';
 };

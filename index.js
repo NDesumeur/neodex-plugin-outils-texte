@@ -21,7 +21,7 @@ const HTML = "";
 .txLim{display:flex;justify-content:space-between;color:var(--lilac);font-size:16px}
 .txBody .hint,.txBody .check{font-size:15px}
 .txClean{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
-.txClean select.f{width:auto;font-size:15px}
+.txClean select.f{width:auto;font-size:15px}.txClean input.f{width:clamp(140px,14vw,240px);font-size:15px}.txClean input.f.bad{border-color:var(--red);color:var(--red)}
 .txLim.over b{color:var(--red)}
 .txSpellOut{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto}
 .txWord{flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
@@ -103,10 +103,19 @@ function txClean(s, o) {
   else if (o.caps === 'upper') s = s.toUpperCase();
   else if (o.caps === 'title') s = s.toLowerCase().replace(/(^|[^\p{L}'’])(\p{L})/gu, (m, a, c) => a + c.toUpperCase());
   else if (o.caps === 'phrase') s = s.replace(/\p{Lu}{2,}(?:[\s'’,-]+\p{Lu}{2,})+/gu, m => m.toLowerCase()).replace(/(^\s*|[.!?…]\s+|\n\s*)(\p{L})/gu, (m, a, c) => a + c.toUpperCase());
+  // les lignes : doublons retirés (sans tenir compte des majuscules ni des espaces autour), puis triées
+  if (o.dedupe) { const seen = new Set(); s = s.split('\n').filter(l => { const k = l.trim().toLowerCase(); if (!k) return true; if (seen.has(k)) return false; seen.add(k); return true; }).join('\n'); }
+  if (o.sort) { const L = s.split('\n'), c = new Intl.Collator('fr', {numeric: true, sensitivity: 'base'}).compare;
+    if (o.sort === 'az') L.sort(c); else if (o.sort === 'za') L.sort((a, b) => c(b, a)); else if (o.sort === 'len') L.sort((a, b) => a.length - b.length || c(a, b)); else if (o.sort === 'rev') L.reverse(); s = L.join('\n'); }
+  const re = txRe(o); if (re) s = s.replace(re, o.rx ? o.repl || '' : () => o.repl || '');  // sans expression régulière, « $ » dans le remplacement reste un « $ »
   return s;  // en début de phrase : plusieurs mots criés de suite sont baissés, un sigle seul (PDF) reste
 }
+// la recherche : un texte simple, ou une expression régulière (par ligne : ^ et $ marquent le début et la fin de chaque ligne) ; une expression invalide lève une erreur
+function txRe(o) { if (!o.find) return null; return o.rx ? new RegExp(o.find, 'gmu' + (o.ic ? 'i' : '')) : new RegExp(o.find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g' + (o.ic ? 'i' : '')); }
 console.assert(txClean('  un  texte\u00A0 coupé\nen deux.\n\n\n\nfin  ', {spaces: 1, trim: 1, join: 1, blank: 1, invisible: 1, caps: ''}) === 'un texte coupé en deux.\n\nfin'
   && txClean('BONJOUR TOUT LE MONDE. ça va ? oui, le PDF', {caps: 'phrase'}) === 'Bonjour tout le monde. Ça va ? Oui, le PDF' && txClean("l'été à paris", {caps: 'title'}) === "L'été À Paris" && txClean('coupu-\nre', {join: 1}) === 'coupure', 'outils texte : nettoyage');
+console.assert(txClean('b\na\nB\n10\n9', {dedupe: 1, sort: 'az'}) === '9\n10\na\nb' && txClean('tel 06 12', {find: '(\\d+)', rx: 1, repl: '[$1]'}) === 'tel [06] [12]'
+  && txClean('a.b $', {find: '.', repl: '$1'}) === 'a$1b $' && txClean('Le le', {find: 'le', repl: 'un', ic: 1}) === 'un un' && txClean('ccc\na\nbb', {sort: 'len'}) === 'a\nbb\nccc', 'outils texte : lignes et remplacement');
 const tx = {mode: 'diff'};
 function txMount() {
   const v = $('textApp'), w = el('div', 'appWrap wide'), head = el('div', 'agHead'), tabs = el('div', 'agNav'), body = el('div', 'txBody');
@@ -185,12 +194,21 @@ function txCleanTab() {
   caps.value = o.caps || ''; caps.id = 'tx_caps'; caps.onchange = () => { o.caps = caps.value; toolsSave(); run(); };
   opts.append(chk('spaces', 'Espaces doubles', 'Deux espaces ou plus, et les tabulations, deviennent une seule espace'), chk('trim', 'Espaces en début et fin de ligne', ''), chk('join', 'Recoller les lignes coupées', 'Les retours à la ligne au milieu d\'une phrase (copie d\'un PDF) disparaissent ; les paragraphes restent'),
     chk('blank', 'Lignes vides en trop', 'Plus d\'une ligne vide de suite devient une seule'), chk('invisible', 'Caractères invisibles', 'Espaces insécables et caractères invisibles collés d\'un PDF ou d\'une page web'), caps);
+  // les lignes et le rechercher-remplacer
+  const lines = el('div', 'txClean'), sort = el('select', 'f'), fi = el('input', 'f'), rp = el('input', 'f');
+  for (const [k, l] of [['', 'Lignes : ne pas trier'], ['az', 'Trier de A à Z'], ['za', 'Trier de Z à A'], ['len', 'Les plus courtes d’abord'], ['rev', 'Inverser l’ordre']]) sort.append(new Option(l, k));
+  sort.value = o.sort || ''; sort.id = 'tx_sort'; sort.onchange = () => { o.sort = sort.value; toolsSave(); run(); };
+  fi.placeholder = 'Rechercher…'; rp.placeholder = 'Remplacer par…'; fi.id = 'tx_find'; rp.id = 'tx_repl'; fi.spellcheck = rp.spellcheck = false; fi.value = o.find || ''; rp.value = o.repl || '';
+  fi.oninput = () => { o.find = fi.value; toolsSave(); run(); }; rp.oninput = () => { o.repl = rp.value; toolsSave(); run(); };
+  lines.append(sort, chk('dedupe', 'Supprimer les lignes en double', 'Une ligne déjà vue plus haut (sans compter les majuscules) disparaît'), fi, rp,
+    chk('rx', 'Expression régulière', 'La recherche est une expression régulière : \\d+ pour un nombre, ^ début de ligne, $ fin de ligne ; $1 reprend la première parenthèse'), chk('ic', 'Sans tenir compte des majuscules', ''));
   const copy = el('button', 'btn main px', 'COPIER LE RÉSULTAT'), put = el('button', 'btn px', 'REMPLACER LE TEXTE'); put.id = 'tx_cleanPut';
   copy.onclick = () => navigator.clipboard.writeText(out.value).then(() => toast('Copié'), () => toast('Copie impossible', true));
   put.onclick = () => { area.value = out.value; tools.text.clean = area.value; toolsSave(); run(); };
   row.append(copy, put, info);
-  const cols = el('div', 'txCols'); cols.append(area, out); tx.body.replaceChildren(opts, cols, row);
-  const run = () => { out.value = txClean(area.value, o); const d = area.value.length - out.value.length; info.textContent = !area.value ? '' : out.value === area.value ? 'Rien à nettoyer.' : d > 0 ? d + ' caractère' + (d > 1 ? 's' : '') + ' en moins' : 'casse changée'; };
+  const cols = el('div', 'txCols'); cols.append(area, out); tx.body.replaceChildren(opts, lines, cols, row);
+  const run = () => { let re; try { re = txRe(o); out.value = txClean(area.value, o); fi.classList.remove('bad'); } catch (e) { fi.classList.add('bad'); info.textContent = 'Expression régulière invalide : ' + e.message.replace(/^.*: /, ''); return; }
+    if (re && area.value) { const n = (txClean(area.value, {...o, find: ''}).match(re) || []).length; info.textContent = n ? n + ' remplacement' + (n > 1 ? 's' : '') : 'Rien trouvé pour « ' + o.find + ' »'; return; } const d = area.value.length - out.value.length; info.textContent = !area.value ? '' : out.value === area.value ? 'Rien à nettoyer.' : d > 0 ? d + ' caractère' + (d > 1 ? 's' : '') + ' en moins' : 'casse changée'; };
   area.addEventListener('input', run); run(); area.focus();
 }
 function txSpell() {
